@@ -1,6 +1,11 @@
 package jobmanager;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * This class represents a JobManager that is capable of managing a set of jobs & their assignment to real-world
@@ -266,7 +271,66 @@ public class JobManager {
      * @throws AssertionError if the representation invariant is violated
      */
     public void checkRep() {
-        // TODO implement this method
-        // DO NOT USE THE `assert` keyword; You must use `throw new AssertionError()`
+        if (this.n < 1) {
+            throw new AssertionError("n is less than 1!");
+        }
+        for (Integer job : this.unassignedJobs) {
+            if (job == null) {
+                throw new AssertionError("Job ID in this.unassignedJobs is null!");
+            }
+
+            if (job == 0) {
+                throw new AssertionError("Job ID in this.unassignedJobs is 0");
+            }
+
+            if (job > this.n) {
+                throw new AssertionError("Job ID > n");
+            }
+            
+            for (Map.Entry<Robot, TreeSet<Integer>> entry : this.robotToJobs.entrySet()) {
+                if (entry.getValue().contains(job)) {
+                    throw new AssertionError("Duplicate jobs found!");
+                }
+            }
+        }
+        
+        Set<Integer> passed = new TreeSet<>();
+        for (Map.Entry<Robot, TreeSet<Integer>> entry : this.robotToJobs.entrySet()) {
+            Integer previous = null;
+            for (Integer job : entry.getValue()) {
+                if (job == null) {
+                    throw new AssertionError("Job ID in this.unassignedJobs is null!");
+                }
+                if (job == 0) {
+                    throw new AssertionError("Job ID in this.unassignedJobs is 0");
+                }
+                if (job > this.n) {
+                    throw new AssertionError("Job ID > n");
+                }
+                if (passed.contains(job)) {
+                    throw new AssertionError("Duplicate assignment!");
+                }
+                passed.add(job);
+                if (previous != null && previous > job) {
+                    throw new AssertionError("Out of order jobs in this.robotToJobs!");
+                }
+                previous = job;
+            }
+        }
+
+        for (int i = 1; i <= n; i++) {
+            if (!this.unassignedJobs.contains(i)) {
+                boolean in = false;
+                for (Map.Entry<Robot, TreeSet<Integer>> entry : this.robotToJobs.entrySet()) {
+                    if (entry.getValue().contains(i)) {
+                        in = true;
+                        break;
+                    }
+                }
+                if (!in) {
+                    throw new AssertionError("Job ID " + i +" is missing!");
+                }
+            }
+        }
     }
 }
