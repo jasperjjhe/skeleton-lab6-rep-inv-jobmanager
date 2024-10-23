@@ -62,9 +62,10 @@ public class JobManager {
     public JobManager(int n) {
         if (n < 1) {throw new IllegalArgumentException("n must be at least 1");}
         this.n = n;
-        for (int i = 0; i < n; i++) {
+        for (int i = 1; i <= n; i++) {
             this.unassignedJobs.add(i);
         }
+        this.checkRep();
     };
 
     /**
@@ -75,6 +76,7 @@ public class JobManager {
      */
     public boolean hasRobot(Robot robot) {
         if (robot == null || robot.isNull()) { return false; }
+        this.checkRep();
         return this.robotToJobs.containsKey(robot);
     }
 
@@ -89,8 +91,10 @@ public class JobManager {
         if (robot == null || robot.isNull()) { return false; }
         if (!this.robotToJobs.containsKey(robot)) {
             this.robotToJobs.put(robot, new TreeSet<>());
+            this.checkRep();
             return true;
         }
+        this.checkRep();
         return false;
     };
 
@@ -104,9 +108,12 @@ public class JobManager {
     public boolean removeRobot(Robot robot) {
         if (robot == null || robot.isNull()) { return false; }
         if (this.robotToJobs.containsKey(robot)) {
+            this.unassignedJobs.addAll(this.robotToJobs.get(robot));
             this.robotToJobs.remove(robot);
+            this.checkRep();
             return true;
         }
+        this.checkRep();
         return false;
     };
 
@@ -124,14 +131,20 @@ public class JobManager {
      */
     public boolean assignJobs(Robot robot, int jobId) {
         if (robot == null || robot.isNull()) { return false; }
-        if (!this.robotToJobs.containsKey(robot)) { return false; }
+        if (!this.robotToJobs.containsKey(robot)) { this.checkRep(); return false; }
+        Set<Integer> toRemove = new TreeSet<>();
         for (Iterator<Integer> jobIter = this.unassignedJobs.iterator(); jobIter.hasNext();) {
             Integer job = jobIter.next();
             if (job <= jobId) {
                 this.robotToJobs.get(robot).add(job);
+                toRemove.add(job);
             }
             else { break; }
         }
+        for (Integer job : toRemove) {
+            this.unassignedJobs.remove(job);
+        }
+        this.checkRep();
         return true;
     }
 
@@ -143,8 +156,9 @@ public class JobManager {
      *         job is assigned to a robot in this; and false otherwise
      */
     public boolean isAssigned(int jobId) {
-        if (jobId < 1 || jobId > n) { return false; }
-        return this.unassignedJobs.contains(jobId);
+        if (jobId < 1 || jobId > n) { this.checkRep(); return false; }
+        this.checkRep();
+        return !this.unassignedJobs.contains(jobId);
     }
 
     /**
@@ -155,10 +169,11 @@ public class JobManager {
      *         managed by this, and (2) that job is assigned to Robot in this; and a Null Robot otherwise
      */
     public Robot getRobot(int jobId) {
-        if (jobId < 1 || jobId > this.n) { return new Robot(0); }
+        if (jobId < 1 || jobId > this.n) { this.checkRep(); return new Robot(0); }
         for (Robot robot : this.robotToJobs.keySet()) {
-            if (this.robotToJobs.get(robot).contains(jobId)) { return new Robot(robot.id); }
+            if (this.robotToJobs.get(robot).contains(jobId)) { this.checkRep(); return new Robot(robot.id); }
         }
+        this.checkRep();
         return new Robot(0);
     }
 
@@ -181,13 +196,21 @@ public class JobManager {
         if (srcRobot.isNull() || dstRobot.isNull()) { return false; }
         if (jobId < 1) { return false; }
         if (!this.robotToJobs.containsKey(srcRobot) || !this.robotToJobs.containsKey(dstRobot)) { return false; }
+        if (srcRobot.equals(dstRobot)) {return true;}
+        Set<Integer> toRemove = new TreeSet<>();
         for (Iterator<Integer> jobIter = this.robotToJobs.get(srcRobot).iterator(); jobIter.hasNext();) {
             Integer job = jobIter.next();
             if (job <= jobId) {
                 this.robotToJobs.get(dstRobot).add(job);
+                toRemove.add(job);
             }
             else { break; }
         }
+        for (Integer job : toRemove) {
+            this.robotToJobs.get(srcRobot).remove(job);
+        }
+
+        this.checkRep();
         return true;
 
     }
@@ -207,7 +230,10 @@ public class JobManager {
         if (srcRobot == null || dstRobot == null) { return false; }
         if (srcRobot.isNull() || dstRobot.isNull()) { return false; }
         if (!this.robotToJobs.containsKey(srcRobot) || !this.robotToJobs.containsKey(dstRobot)) { return false; }
+        if (srcRobot.equals(dstRobot)) {return true;}
         this.robotToJobs.get(dstRobot).addAll(this.robotToJobs.get(srcRobot));
+        this.robotToJobs.get(srcRobot).clear();
+        this.checkRep();
         return true;
     }
 
@@ -225,6 +251,7 @@ public class JobManager {
         if (jobId < 1) { return 0; }
         if (!this.robotToJobs.containsKey(robot)) { return 0; }
         if (this.robotToJobs.get(robot).isEmpty()) { return 0; }
+        this.checkRep();
         return this.robotToJobs.get(robot).floor(jobId);
     }
 
